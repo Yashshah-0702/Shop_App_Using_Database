@@ -6,6 +6,10 @@ const error = require('./controller/error')
 const sequelize = require('./database/database')
 const Product = require('./model/model')
 const User = require('./model/user')
+const Cart = require('./model/cart')
+const CartItem = require('./model/cart-item')
+const Order = require('./model/order')
+const OrderItem = require('./model/order-items')
 
 app.set('view engine','ejs')
 app.set('views','views')
@@ -25,9 +29,22 @@ app.use(error.page)
 // 1st way for one to many relations
 Product.belongsTo(User,{constraints:true,onDelete:'CASCADE'})
 // 2nd way for one to many relations
-// User.hasMany(Product)
+// Many To one
+User.hasMany(Product)
+User.hasOne(Cart)
+Cart.belongsTo(User)
+// Many to many
+Cart.belongsToMany(Product,{through: CartItem})
+Product.belongsToMany(Cart,{through: CartItem})
+ 
+Order.belongsTo(User)
+User.hasMany(Order)
+Order.belongsToMany(Product,{through:OrderItem})
 
-sequelize.sync().then((result)=>{
+sequelize
+// .sync({force:true})
+.sync()
+.then((result)=>{
     return User.findByPk(1);
     // console.log(result)
 })
@@ -39,6 +56,9 @@ sequelize.sync().then((result)=>{
 })
 .then(user=>{
     // console.log(user)
+    return user.createCart()
+})
+.then(cart=>{
     app.listen(7400)
 })
 .catch(err=>console.log(err))
